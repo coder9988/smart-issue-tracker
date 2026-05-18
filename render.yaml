@@ -29,7 +29,6 @@ services:
   - type: web
     name: smart-issue-tracker-frontend
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
