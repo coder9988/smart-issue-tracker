@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 
@@ -9,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me-please")
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com").split(",")]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,7 +60,15 @@ WSGI_APPLICATION = "issue_tracker.wsgi.application"
 
 DATABASES = {}
 
-if os.getenv("POSTGRES_DB") and os.getenv("POSTGRES_USER") and os.getenv("POSTGRES_PASSWORD"):
+if os.getenv("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.getenv("DATABASE_URL"),
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+elif os.getenv("POSTGRES_DB") and os.getenv("POSTGRES_USER") and os.getenv("POSTGRES_PASSWORD"):
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("POSTGRES_DB"),
@@ -96,6 +106,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "tracker.User"
 
@@ -119,7 +130,16 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+if cors_allowed_origins:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_allowed_origins.split(",")]
+else:
+    CORS_ALLOW_ALL_ORIGINS = True
+
+csrf_trusted_origins = os.getenv("CSRF_TRUSTED_ORIGINS")
+if csrf_trusted_origins:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins.split(",")]
 
 SWAGGER_SETTINGS = {
     "SPEC_URL": "/swagger.json",

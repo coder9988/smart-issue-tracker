@@ -28,10 +28,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn issue_tracker.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"
 

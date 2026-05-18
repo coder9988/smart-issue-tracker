@@ -95,6 +95,34 @@ The workflow in `.github/workflows/ci.yml` runs on pushes and pull requests. It 
 - React production build
 - Docker Compose config and Docker image builds
 
+## Render Deployment
+
+The repository includes `render.yaml` for a Render Blueprint deployment:
+
+- PostgreSQL database: `smart-issue-tracker-db`
+- Backend Docker web service: `smart-issue-tracker-backend`
+- Frontend static web service: `smart-issue-tracker-frontend`
+
+Render should provide `DATABASE_URL` to the backend from the managed PostgreSQL database. The backend Docker entrypoint runs:
+
+```bash
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+gunicorn issue_tracker.wsgi:application
+```
+
+After deploying, update these Render environment variables if your generated service URLs differ from the names in `render.yaml`:
+
+- Backend `CORS_ALLOWED_ORIGINS`: frontend URL, for example `https://smart-issue-tracker-frontend.onrender.com`
+- Backend `CSRF_TRUSTED_ORIGINS`: backend URL, for example `https://smart-issue-tracker-backend.onrender.com`
+- Frontend `VITE_API_BASE_URL`: backend API URL, for example `https://smart-issue-tracker-backend.onrender.com/api/`
+
+Create an admin user from the Render backend shell:
+
+```bash
+python manage.py createsuperuser
+```
+
 ## Notes
 
 - API root is served under `/api/`.
