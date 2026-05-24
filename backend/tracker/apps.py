@@ -11,3 +11,4 @@ class TrackerConfig(AppConfig):
             from . import signals  # noqa: F401
         except Exception:
             pass
+
